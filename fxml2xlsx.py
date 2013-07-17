@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+
 '''
 Author: moloch
 License: GPLv2
 About: Convert Fortify xml documents to useful formats
 '''
+
+
 import os
 import sys
 import platform
@@ -41,6 +44,7 @@ def print_info(msg):
     sys.stdout.write(chr(27) + '[2K')
     sys.stdout.write('\r' + INFO + msg)
     sys.stdout.flush()
+
 
 ### Classes
 class Finding(object):
@@ -164,7 +168,9 @@ class FortifyReport(object):
     def report_sections(self):
         ''' Return only report sections that contain subsections '''
         kids = self.get_children_by_tag(self.doc, 'reportsection')
-        _sections = filter(lambda child: child.get('optionalSubsections').lower() == 'true', kids)
+        _sections = filter(
+            lambda child: child.get('optionalSubsections').lower() == 'true', kids
+        )
         print_info("Found %d report section(s)\n" % len(_sections))
         return _sections
 
@@ -226,10 +232,11 @@ class FortifyReport(object):
         worksheet.set_column('B:B', fname_length)
         line_length = max(len(issue.line_start) for issue in self.findings[risk_level])
         worksheet.set_column('C:C', line_length + 10)  # Extra wiggle room for title
-        target_function_length = max(len(issue.target_function) for issue in self.findings[risk_level])
-        worksheet.set_column('D:D', target_function_length)
+        tfunction_length = max(len(issue.target_function) for issue in self.findings[risk_level])
+        worksheet.set_column('D:D', tfunction_length)
         fpath_length = max(len(issue.file_path) for issue in self.findings[risk_level])
         worksheet.set_column('E:E', fpath_length)
+
 
 ### Main Function
 def main(args):
