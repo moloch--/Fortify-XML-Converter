@@ -205,12 +205,12 @@ class FortifyReport(object):
         fout = output if output is not None else 'FortifyReport.xlsx'
         if not fout.endswith('.xlsx'): fout += ".xlsx"
         workbook = Workbook(fout)
-        self._write_xlsx_risks(workbook)
+        self._write_xlsx_tabs(workbook)
         self._write_xlsx_master(workbook)
         print_info("Saved output to: "+BOLD+"%s\n" % fout)
         workbook.close()
 
-    def _write_xlsx_risks(self, workbook):
+    def _write_xlsx_tabs(self, workbook):
         ''' Write findings to spreadsheet, each risk to a seperate worksheet '''
         for risk_level in self.findings:
             if not 0 < len(self.findings[risk_level]):
