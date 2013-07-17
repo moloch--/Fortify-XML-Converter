@@ -1,12 +1,16 @@
 #!/usr/bin/env python
-
+'''
+Author: moloch
+License: GPLv2
+About: Convert Fortify xml documents to useful formats
+'''
 import os
 import sys
 import platform
 import argparse
 import xml.dom.minidom
 
-# I love colors :D
+### Setup Stuff
 if platform.system().lower() in ['linux', 'darwin']:
     INFO = "\033[1m\033[36m[*]\033[0m "
     WARN = "\033[1m\033[31m[!]\033[0m "
@@ -31,19 +35,18 @@ except ImportError:
     print(WARN+'Warning: Failed to import cElementTree, falling back to ElementTree')
     import xml.etree.ElementTree as ET
 
-
+### Classes
 class Finding(object):
     ''' 
-    Holds data for a single Fortiry finding, sortable by severity (rank)
+    Holds data for a single Fortify finding, sortable by severity (rank)
     '''
 
-    def __init__(self, category, severity, file_name, file_path, 
-                    line_start, target_function=None):
-        self.category = category      # Category
-        self.severity = severity      # Folder
-        self.file_name = file_name    # FileName
-        self.file_path = file_path    # FilePath
-        self.line_start = line_start  # LineStart
+    def __init__(self, category, severity, file_name, file_path, line_start, target_function=None):
+        self.category = category      # <Category />
+        self.severity = severity      # <Folder />
+        self.file_name = file_name    # <FileName />
+        self.file_path = file_path    # <FilePath />
+        self.line_start = line_start  # <LineStart />
         self.target_function = str(target_function)
         self._ranks = {
             'critical': 4,
@@ -67,8 +70,8 @@ class Finding(object):
             return -1
 
 
-class FortiryReport(object):
-    ''' Python object based on the Fortiry report xml data '''
+class FortifyReport(object):
+    ''' Python object based on the Fortify report xml data '''
 
     def __init__(self, file_path):
         self.fname = file_path
@@ -100,12 +103,16 @@ class FortiryReport(object):
 
     def get_groupings(self, section):
         ''' Traverse DOM and return groups '''
-        kids = self.get_children_by_tag(section, 'subsection')[0]
-        kids = self.get_children_by_tag(kids, 'issuelisting')[0]
-        kids = self.get_children_by_tag(kids, 'chart')[0]
-        groups = self.get_children_by_tag(kids, 'groupingsection')
-        print_info("Found %d grouping(s) in %s\n" % (len(groups), self.fname))
-        return groups
+        try:
+            kids = self.get_children_by_tag(section, 'subsection')[0]
+            kids = self.get_children_by_tag(kids, 'issuelisting')[0]
+            kids = self.get_children_by_tag(kids, 'chart')[0]
+            groups = self.get_children_by_tag(kids, 'groupingsection')
+            print_info("Found %d grouping(s) in %s\n" % (len(groups), self.fname))
+            return groups
+        except IndexError:
+            print(WARN+"Error: Failed to parse report body, missing required tag.")
+            os._exit(1)
 
     def _generate_findings(self, group):
         ''' Creates a list of findings based on a grouping '''
@@ -116,7 +123,7 @@ class FortiryReport(object):
         ''' Return only report sections that contain subsections '''
         kids = self.get_children_by_tag(self.doc, 'reportsection')
         _sections = filter(lambda child: child.get('optionalSubsections').lower() == 'true', kids)
-        print_info("Found %d report section(s)" % len(_sections))
+        print_info("Found %d report section(s)\n" % len(_sections))
         return _sections
 
     def get_children_by_tag(self, elem, tag_name):
@@ -160,9 +167,10 @@ class FortiryReport(object):
         worksheet.write("D1", "Target Function", cell_format)
         worksheet.write("E1", "File Path", cell_format)
 
+### Main Function
 def main(args):
     ''' Call functions based on user args '''
-    report = FortiryReport(args.target)
+    report = FortifyReport(args.target)
     formats = {
         'xml': report.fix,
         'xlsx': report.to_xlsx,
@@ -176,10 +184,10 @@ def main(args):
         formats[args.format](args.output)
 
 
-### UI Code
+### CLI Code
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Convert Fortiry reports to a friendly spreadsheet formats',
+        description='Convert Fortify reports to a friendly spreadsheet formats',
     )
     parser.add_argument('--version',
         action='version',
@@ -196,7 +204,7 @@ if __name__ == '__main__':
         default=None,
     )
     parser.add_argument('--format', '-f',
-        help='ouptut format, xml, xls or csv (default: xlsx)',
+        help='ouptut format can be: xml, xlsx, or csv (default: xlsx)',
         dest='format',
         default='xlsx',
     )
