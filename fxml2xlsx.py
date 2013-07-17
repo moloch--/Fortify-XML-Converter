@@ -47,7 +47,7 @@ class Finding(object):
     Holds data for a single Fortify finding, sortable by severity (rank)
     '''
 
-    def __init__(self, category, severity, file_name, file_path, line_start, target_function=None):
+    def __init__(self, category, severity, file_name, file_path, line_start, target_function):
         self.category = category      # <Category />
         self.severity = severity      # <Folder />
         self.file_name = file_name    # <FileName />
