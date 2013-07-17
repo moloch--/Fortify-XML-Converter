@@ -305,8 +305,8 @@ class FortifyReport(object):
     def __len__(self):
         ''' Return the total number of findings parsed from XML file '''
         total = 0
-        for key in self.findings:
-            total += len(self.findings[key])
+        for key in self._findings:
+            total += len(self._findings[key])
         return total
 
 ### Main Function
