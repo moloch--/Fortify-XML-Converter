@@ -144,6 +144,8 @@ class FortifyReport(object):
                     line_start=elems['linestart'].text.strip(),
                     target_function=str(elems['targetfunction'].text).strip(),
                 )
+                if severity not in self._findings:
+                    self._findings[severity] = []
                 self._findings[severity].append(finding)
 
     def _issue_elements(self, issue):
@@ -183,8 +185,8 @@ class FortifyReport(object):
     def count_findings(self):
         ''' Return the total number of findings parsed from XML file '''
         total = 0
-        for key in self._findings:
-            total += len(self._findings[key])
+        for key in self.findings:
+            total += len(self.findings[key])
         return total
 
     @property
