@@ -108,7 +108,7 @@ class FortifyReport(object):
                 groupings = self.get_groupings(section)
                 for index, group in enumerate(groupings):
                     stats = (index + 1, len(groupings), group.get('count'),)
-                    print_info("Parsing group %02d of %02d, with %s finding(s)\n" % stats)
+                    print_info("Parsing group %02d of %02d, with %s finding(s)" % stats)
                     group_title = self.get_children_by_tag(group, 'grouptitle')[0]
                     self._generate_findings(group)
                 stats = (len(groupings), len(self),)
@@ -122,7 +122,7 @@ class FortifyReport(object):
             kids = self.get_children_by_tag(kids, 'issuelisting')[0]
             kids = self.get_children_by_tag(kids, 'chart')[0]
             groups = self.get_children_by_tag(kids, 'groupingsection')
-            print_info("Found %d grouping(s) in %s\n" % (len(groups), self.fname))
+            print_info("Found %d grouping(s)" % len(groups))
             return groups
         except IndexError:
             print(WARN+"Error: Failed to parse report body, missing required tag.")
@@ -174,7 +174,7 @@ class FortifyReport(object):
         _sections = filter(
             lambda child: child.get('optionalSubsections').lower() == 'true', kids
         )
-        print_info("Found %d report section(s)\n" % len(_sections))
+        print_info("Found %d report section(s)" % len(_sections))
         return _sections
 
     def get_children_by_tag(self, elem, tag_name):
@@ -213,7 +213,7 @@ class FortifyReport(object):
         for risk_level in self.findings:
             if not 0 < len(self.findings[risk_level]):
                 continue
-            print_info("Writing %s risk details to spreadsheet\n" % risk_level)
+            print_info("Writing %s risk details to spreadsheet" % risk_level)
             worksheet = workbook.add_worksheet(risk_level.title())
             self._add_column_names(workbook, worksheet)
             self._resize_columns(worksheet, risk_level)
@@ -250,7 +250,7 @@ class FortifyReport(object):
 
     def _write_xlsx_master(self, workbook):
         ''' Write an order list of all issues '''
-        print_info("Writing master list to spreadsheet\n")
+        print_info("Writing master list to spreadsheet")
         worksheet = workbook.add_worksheet("Master List")
         self._add_master_names(workbook, worksheet)
         self._resize_master(worksheet)
@@ -311,6 +311,7 @@ class FortifyReport(object):
         ''' Return the total number of findings parsed from XML file '''
         return sum([len(self._findings[key]) for key in self._findings])
 
+
 ### Main Function
 def main(args):
     ''' Call functions based on user args '''
@@ -329,7 +330,7 @@ def main(args):
         formats[args.format](args.output)
     import time
     delta = datetime.now() - start
-    print_info("Completed in %f second(s)\n" % (delta.microseconds / 1000000.0,))
+    print_info("Completed in %f second(s)\n" % delta.total_seconds())
 
 
 ### CLI Code
