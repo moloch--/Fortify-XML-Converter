@@ -187,6 +187,14 @@ class FortifyReport(object):
             total += len(self._findings[key])
         return total
 
+    @property
+    def ordered_findings(self):
+        ''' Return a sorted master list of all findings '''
+        master = []
+        for risk_level in self.findings:
+            master += self.findings[risk_level]
+        return sorted(master)
+
     def to_csv(self, output):
         ''' Create a csv file based on findings '''
         print(WARN+"Yeah... So I havn't gotten around to writing the code for this yet, sorry!")
@@ -197,6 +205,13 @@ class FortifyReport(object):
         fout = output if output is not None else 'FortifyReport.xlsx'
         if not fout.endswith('.xlsx'): fout += ".xlsx"
         workbook = Workbook(fout)
+        self._write_xlsx_risks(workbook)
+        self._write_xlsx_master(workbook)
+        print_info("Saved output to: "+BOLD+"%s\n" % fout)
+        workbook.close()
+
+    def _write_xlsx_risks(self, workbook):
+        ''' Write findings to spreadsheet, each risk to a seperate worksheet '''
         for risk_level in self.findings:
             if not 0 < len(self.findings[risk_level]):
                 continue
@@ -210,8 +225,6 @@ class FortifyReport(object):
                 worksheet.write("C%d" % (index + 2,), vuln.line_start)
                 worksheet.write("D%d" % (index + 2,), vuln.target_function)
                 worksheet.write("E%d" % (index + 2,), vuln.file_path)
-        print_info("Saved output to: "+BOLD+"%s\n" % fout)
-        workbook.close()
 
     def _add_column_names(self, workbook, worksheet):
         cell_format = workbook.add_format()
@@ -236,6 +249,49 @@ class FortifyReport(object):
         worksheet.set_column('D:D', tfunction_length)
         fpath_length = max(len(issue.file_path) for issue in self.findings[risk_level])
         worksheet.set_column('E:E', fpath_length)
+
+    def _write_xlsx_master(self, workbook):
+        ''' Write an order list of all issues '''
+        worksheet = workbook.add_worksheet("Master List")
+        self._resize_master(worksheet)
+        for index, vuln in enumerate(self.ordered_findings):
+            cell_format = self._severity_format(workbook, vuln.severity)
+            severity_text = vuln.severity.title() + " Risk"
+            worksheet.write("A%d" % (index + 1,), severity_text, cell_format)
+            worksheet.write("B%d" % (index + 1,), vuln.category)
+            worksheet.write("C%d" % (index + 1,), vuln.file_name)
+            worksheet.write("D%d" % (index + 1,), vuln.line_start)
+            worksheet.write("E%d" % (index + 1,), vuln.target_function)
+            worksheet.write("F%d" % (index + 1,), vuln.file_path)
+
+    def _resize_master(self, worksheet):
+        ''' Resize columns in the master tab to longest string '''
+        worksheet.set_column('A:A', len("Critical Risk"))  # Longest severity string
+        category_length = max(len(issue.category) for issue in self.ordered_findings)
+        worksheet.set_column('B:B', category_length)
+        fname_length = max(len(issue.file_name) for issue in self.ordered_findings)
+        worksheet.set_column('C:C', fname_length)
+        line_length = max(len(issue.line_start) for issue in self.ordered_findings)
+        worksheet.set_column('D:D', line_length + 10)  # Extra wiggle room for title
+        tfunction_length = max(len(issue.target_function) for issue in self.ordered_findings)
+        worksheet.set_column('E:E', tfunction_length)
+        fpath_length = max(len(issue.file_path) for issue in self.ordered_findings)
+        worksheet.set_column('F:F', fpath_length)
+
+    def _severity_format(self, workbook, severity):
+        ''' Create format based on severity level '''
+        cell_format = workbook.add_format()
+        cell_format.set_bold()
+        if severity == 'critical':
+            cell_format.set_bg_color('red')
+        elif severity == 'high':
+            cell_format.set_bg_color('orange')
+        elif severity == 'medium':
+            cell_format.set_bg_color('yellow')
+        else:
+            cell_format.set_font_color('white')
+            cell_format.set_bg_color('navy')           
+        return cell_format
 
 
 ### Main Function
