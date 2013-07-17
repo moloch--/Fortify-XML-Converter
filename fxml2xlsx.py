@@ -110,7 +110,7 @@ class FortifyReport(object):
                     print_info("Parsing group %02d of %02d, with %s finding(s)\n" % stats)
                     group_title = self.get_children_by_tag(group, 'grouptitle')[0]
                     self._generate_findings(group)
-                stats = (len(groupings), self.count_findings(),)
+                stats = (len(groupings), len(self),)
                 print_info("Successfully parsed %d grouping(s), and %d finding(s)\n" % stats)
         return self._findings
 
@@ -181,13 +181,6 @@ class FortifyReport(object):
         return filter(
             lambda child: child.tag.lower() == tag_name.lower(), elem.getchildren()
         )
-
-    def count_findings(self):
-        ''' Return the total number of findings parsed from XML file '''
-        total = 0
-        for key in self.findings:
-            total += len(self.findings[key])
-        return total
 
     @property
     def ordered_findings(self):
@@ -309,6 +302,12 @@ class FortifyReport(object):
             cell_format.set_bg_color('navy')           
         return cell_format
 
+    def __len__(self):
+        ''' Return the total number of findings parsed from XML file '''
+        total = 0
+        for key in self.findings:
+            total += len(self.findings[key])
+        return total
 
 ### Main Function
 def main(args):
