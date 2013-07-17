@@ -129,7 +129,6 @@ class FortifyReport(object):
         for index, issue in enumerate(issues):
             print_info("Parsing issue %d of %d ..." % (index + 1, len(issues)))
             elems = self._issue_elements(issue)
-            # category, severity, file_name, file_path, line_start, target_function=None
             if elems is not None:
                 severity = elems['folder'].text.strip().lower()
                 finding = Finding(
@@ -155,8 +154,7 @@ class FortifyReport(object):
             elems['targetfunction'] = self.get_children_by_tag(primary_elem, 'targetfunction')[0]
         except IndexError:
             print(WARN+"Warning: Failed to parse issue, missing required tag.")
-            if self.debug: 
-                traceback.print_exc()
+            if self.debug: traceback.print_exc()
             return None
         finally:
             return elems
@@ -198,6 +196,7 @@ class FortifyReport(object):
             print_info("Writting %s risk details to spreadsheet\n" % risk_level)
             worksheet = workbook.add_worksheet(risk_level.title())
             self._add_column_names(workbook, worksheet)
+            self._resize_columns(worksheet, risk_level)
             for index, vuln in enumerate(self.findings[risk_level]):
                 worksheet.write("A%d" % (index + 2,), vuln.category)
                 worksheet.write("B%d" % (index + 2,), vuln.file_name)
@@ -217,6 +216,19 @@ class FortifyReport(object):
         worksheet.write("C1", "Line Start", cell_format)
         worksheet.write("D1", "Target Function", cell_format)
         worksheet.write("E1", "File Path", cell_format)
+
+    def _resize_columns(self, worksheet, risk_level):
+        ''' Adjust column width to longest string '''
+        category_length = max(len(issue.category) for issue in self.findings[risk_level])
+        worksheet.set_column('A:A', category_length)
+        fname_length = max(len(issue.file_name) for issue in self.findings[risk_level])
+        worksheet.set_column('B:B', fname_length)
+        line_length = max(len(issue.line_start) for issue in self.findings[risk_level])
+        worksheet.set_column('C:C', line_length + 10)  # Extra wiggle room for title
+        target_function_length = max(len(issue.target_function) for issue in self.findings[risk_level])
+        worksheet.set_column('D:D', target_function_length)
+        fpath_length = max(len(issue.file_path) for issue in self.findings[risk_level])
+        worksheet.set_column('E:E', fpath_length)
 
 ### Main Function
 def main(args):
