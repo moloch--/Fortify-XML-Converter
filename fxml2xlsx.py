@@ -253,16 +253,30 @@ class FortifyReport(object):
     def _write_xlsx_master(self, workbook):
         ''' Write an order list of all issues '''
         worksheet = workbook.add_worksheet("Master List")
+        self._add_master_names(workbook, worksheet)
         self._resize_master(worksheet)
         for index, vuln in enumerate(self.ordered_findings):
             cell_format = self._severity_format(workbook, vuln.severity)
             severity_text = vuln.severity.title() + " Risk"
-            worksheet.write("A%d" % (index + 1,), severity_text, cell_format)
-            worksheet.write("B%d" % (index + 1,), vuln.category)
-            worksheet.write("C%d" % (index + 1,), vuln.file_name)
-            worksheet.write("D%d" % (index + 1,), vuln.line_start)
-            worksheet.write("E%d" % (index + 1,), vuln.target_function)
-            worksheet.write("F%d" % (index + 1,), vuln.file_path)
+            worksheet.write("A%d" % (index + 2,), severity_text, cell_format)
+            worksheet.write("B%d" % (index + 2,), vuln.category)
+            worksheet.write("C%d" % (index + 2,), vuln.file_name)
+            worksheet.write("D%d" % (index + 2,), vuln.line_start)
+            worksheet.write("E%d" % (index + 2,), vuln.target_function)
+            worksheet.write("F%d" % (index + 2,), vuln.file_path)
+
+    def _add_master_names(self, workbook, worksheet):
+        ''' Add master column names '''
+        cell_format = workbook.add_format()
+        cell_format.set_bold()
+        cell_format.set_font_color('white')
+        cell_format.set_bg_color('blue')
+        worksheet.write("A1", "Risk Level", cell_format)
+        worksheet.write("B1", "Category", cell_format)
+        worksheet.write("C1", "File Name", cell_format)
+        worksheet.write("D1", "Line Start", cell_format)
+        worksheet.write("E1", "Target Function", cell_format)
+        worksheet.write("F1", "File Path", cell_format)
 
     def _resize_master(self, worksheet):
         ''' Resize columns in the master tab to longest string '''
