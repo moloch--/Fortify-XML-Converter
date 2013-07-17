@@ -210,7 +210,7 @@ class FortifyReport(object):
         for risk_level in self.findings:
             if not 0 < len(self.findings[risk_level]):
                 continue
-            print_info("Writting %s risk details to spreadsheet\n" % risk_level)
+            print_info("Writing %s risk details to spreadsheet\n" % risk_level)
             worksheet = workbook.add_worksheet(risk_level.title())
             self._add_column_names(workbook, worksheet)
             self._resize_columns(worksheet, risk_level)
@@ -247,6 +247,7 @@ class FortifyReport(object):
 
     def _write_xlsx_master(self, workbook):
         ''' Write an order list of all issues '''
+        print_info("Writing master list to spreadsheet\n")
         worksheet = workbook.add_worksheet("Master List")
         self._add_master_names(workbook, worksheet)
         self._resize_master(worksheet)
