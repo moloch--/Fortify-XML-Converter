@@ -69,7 +69,7 @@ class Finding(object):
     @property
     def rank(self):
         ''' Integer based on severity, used for sorting '''
-        return _ranks[self.severity.lower()]
+        return self._ranks[self.severity.lower()]
 
     def __cmp__(self, other):
         ''' Allows us to call bult-in sort() '''
