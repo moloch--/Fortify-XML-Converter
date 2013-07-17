@@ -72,7 +72,7 @@ class Finding(object):
         return self._ranks[self.severity.lower()]
 
     def __cmp__(self, other):
-        ''' Allows us to call bult-in sort() '''
+        ''' Allows us to call bult-in sorted() '''
         if self.rank < other.rank:
             return 1
         elif self.rank == other.rank:
@@ -90,10 +90,11 @@ class FortifyReport(object):
         self.tree = ET.parse(self.fname)
         self.doc = self.tree.getroot()
         self._findings = None
+        self._ordered_findings = None
         self._severity_formats = None
 
-    def fix(self, output):
-        ''' Fix DOM structure and output '''
+    def fix(self, output, remove):
+        ''' Fix DOM structure and output, "remove" not used '''
         fout = sys.stdout if output is None else open(output, 'w')
         xml_dom = xml.dom.minidom.parse(self.fname)
         fout.write(xml_dom.toprettyxml())
@@ -185,10 +186,12 @@ class FortifyReport(object):
     @property
     def ordered_findings(self):
         ''' Return a sorted master list of all findings '''
-        master = []
-        for risk_level in self.findings:
-            master += self.findings[risk_level]
-        return sorted(master)
+        if self._ordered_findings is None:
+            master = []
+            for risk_level in self.findings:
+                master += self.findings[risk_level]
+            self._ordered_findings = sorted(master)
+        return self._ordered_findings
 
     def to_csv(self, output):
         ''' Create a csv file based on findings '''
@@ -293,6 +296,7 @@ class FortifyReport(object):
         cell_format = workbook.add_format()
         cell_format.set_bold()
         if severity == 'critical':
+            cell_format.set_font_color('white')
             cell_format.set_bg_color('red')
         elif severity == 'high':
             cell_format.set_bg_color('orange')
@@ -305,10 +309,7 @@ class FortifyReport(object):
 
     def __len__(self):
         ''' Return the total number of findings parsed from XML file '''
-        total = 0
-        for key in self._findings:
-            total += len(self._findings[key])
-        return total
+        return sum([len(self._findings[key]) for key in self._findings])
 
 ### Main Function
 def main(args):
