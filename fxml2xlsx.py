@@ -13,6 +13,19 @@ import xml.dom.minidom
 
 from datetime import datetime
 
+try:
+    from xlsxwriter.workbook import Workbook
+except ImportError:
+    print(WARN+'''Warning: xlsxwriter library is not installed, cannot output xlsx format.
+Download it from: https://pypi.python.org/pypi/XlsxWriter ''')
+
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    print(WARN+'Warning: Failed to import cElementTree, falling back to ElementTree')
+    import xml.etree.ElementTree as ET
+
+
 ### Setup Stuff
 if platform.system().lower() in ['linux', 'darwin']:
     INFO = "\033[1m\033[36m[*]\033[0m "
@@ -28,18 +41,6 @@ def print_info(msg):
     sys.stdout.write(chr(27) + '[2K')
     sys.stdout.write('\r' + INFO + msg)
     sys.stdout.flush()
-
-try:
-    from xlsxwriter.workbook import Workbook
-except ImportError:
-    print(WARN+'''Warning: xlsxwriter library is not installed, cannot output xlsx format.
-Download it from: https://pypi.python.org/pypi/XlsxWriter ''')
-
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    print(WARN+'Warning: Failed to import cElementTree, falling back to ElementTree')
-    import xml.etree.ElementTree as ET
 
 ### Classes
 class Finding(object):
