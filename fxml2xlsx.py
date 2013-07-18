@@ -84,7 +84,11 @@ class FortifyReport(object):
     def __init__(self, file_path, debug=False):
         self.fname = file_path
         self.debug = debug
-        self.tree = ET.parse(self.fname)
+        try:
+            self.tree = ET.parse(self.fname)
+        except Exception as error:
+            print(WARN+"ERROR: " + str(error))
+            os._exit(1)
         self.doc = self.tree.getroot()
         self._findings = None
         self._ordered_findings = None
