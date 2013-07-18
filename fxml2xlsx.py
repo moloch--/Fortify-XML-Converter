@@ -19,13 +19,14 @@ from datetime import datetime
 try:
     from xlsxwriter.workbook import Workbook
 except ImportError:
-    print(WARN+'''Warning: xlsxwriter library is not installed, cannot output xlsx format.
+    print('''
+Warning: xlsxwriter library is not installed, cannot output xlsx format.
 Download it from: https://pypi.python.org/pypi/XlsxWriter ''')
 
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
-    print(WARN+'Warning: Failed to import cElementTree, falling back to ElementTree')
+    print('Warning: Failed to import cElementTree, falling back to ElementTree')
     import xml.etree.ElementTree as ET
 
 
@@ -39,6 +40,7 @@ else:
     WARN = "[!] "
     BOLD = ""
 
+
 def print_info(msg):
     ''' Clears the current line and prints message '''
     sys.stdout.write(chr(27) + '[2K')
@@ -48,11 +50,12 @@ def print_info(msg):
 
 ### Classes
 class Finding(object):
-    ''' 
+    '''
     Holds data for a single Fortify finding, sortable by severity (rank)
     '''
 
-    def __init__(self, category, severity, file_name, file_path, line_start, target_function):
+    def __init__(self, category, severity, file_name,
+                    file_path, line_start, target_function):
         self.category = category      # <Category />
         self.severity = severity      # <Folder />
         self.file_name = file_name    # <FileName />
@@ -103,13 +106,14 @@ class FortifyReport(object):
     def findings(self):
         ''' Parse DOM and return list of Finding objects '''
         if self._findings is None:
-            self._findings = {'critical': [], 'high': [], 'medium': [], 'low': []}
+            self._findings = {
+                'critical': [], 'high': [], 'medium': [], 'low': []
+            }
             for section in self.report_sections:
                 groupings = self.get_groupings(section)
                 for index, group in enumerate(groupings):
                     stats = (index + 1, len(groupings), group.get('count'),)
                     print_info("Parsing group %02d of %02d, with %s finding(s)" % stats)
-                    group_title = self.get_children_by_tag(group, 'grouptitle')[0]
                     self._generate_findings(group)
                 stats = (len(groupings), len(self),)
                 print_info("Successfully parsed %d grouping(s), and %d finding(s)\n" % stats)
@@ -125,8 +129,9 @@ class FortifyReport(object):
             print_info("Found %d grouping(s)" % len(groups))
             return groups
         except IndexError:
-            print(WARN+"Error: Failed to parse report body, missing required tag.")
-            if self.debug: traceback.print_exc()
+            print(WARN + "Error: Failed to parse report body, missing required tag.")
+            if self.debug:
+                traceback.print_exc()
             os._exit(1)
 
     def _generate_findings(self, group):
@@ -161,8 +166,9 @@ class FortifyReport(object):
             elems['linestart'] = self.get_children_by_tag(primary_elem, 'linestart')[0]
             elems['targetfunction'] = self.get_children_by_tag(primary_elem, 'targetfunction')[0]
         except IndexError:
-            print(WARN+"Warning: Failed to parse issue, missing required tag.")
-            if self.debug: traceback.print_exc()
+            print(WARN + "Warning: Failed to parse issue, missing required tag.")
+            if self.debug:
+                traceback.print_exc()
             return None
         finally:
             return elems
@@ -195,21 +201,24 @@ class FortifyReport(object):
 
     def to_csv(self, output):
         ''' Create a csv file based on findings '''
-        print(WARN+"Yeah... So I havn't gotten around to writing the code for this yet, sorry!")
+        print(WARN + "Yeah... So I havn't gotten around to writing the code for this yet, sorry!")
         os._exit(1)
 
     def to_xlsx(self, output):
         ''' Create a Excel spreadsheet based on the findings '''
         fout = output if output is not None else 'FortifyReport.xlsx'
-        if not fout.endswith('.xlsx'): fout += ".xlsx"
+        if not fout.endswith('.xlsx'):
+            fout += ".xlsx"
         workbook = Workbook(fout)
         self._write_xlsx_tabs(workbook)
         self._write_xlsx_master(workbook)
-        print_info("Saved output to: "+BOLD+"%s\n" % fout)
+        print_info("Saved output to: " + BOLD + "%s\n" % fout)
         workbook.close()
 
     def _write_xlsx_tabs(self, workbook):
-        ''' Write findings to spreadsheet, each risk to a seperate worksheet '''
+        '''
+        Write findings to spreadsheet, each risk to a seperate worksheet
+        '''
         for risk_level in self.findings:
             if not 0 < len(self.findings[risk_level]):
                 continue
@@ -304,7 +313,7 @@ class FortifyReport(object):
             cell_format.set_bg_color('yellow')
         else:
             cell_format.set_font_color('white')
-            cell_format.set_bg_color('navy')           
+            cell_format.set_bg_color('navy')
         return cell_format
 
     def __len__(self):
@@ -323,12 +332,11 @@ def main(args):
         'csv': report.to_csv,
     }
     if args.format not in formats:
-        print(WARN+'Error: Output format not supported.')
+        print(WARN + 'Error: Output format not supported.')
     else:
         if args.output is not None and os.path.exists(args.output):
-            print(WARN+"Warning: Overwriting file "+BOLD+"%s" % args.output)
+            print(WARN + "Warning: Overwriting file " + BOLD + args.output)
         formats[args.format](args.output)
-    import time
     delta = datetime.now() - start
     print_info("Completed in %f second(s)\n" % delta.total_seconds())
 
@@ -366,4 +374,4 @@ if __name__ == '__main__':
     if os.path.exists(args.target) and os.path.isfile(args.target):
         main(args)
     else:
-        print(WARN+'Error: Target file does not exist.')
+        print(WARN + 'Error: Target file does not exist.')
