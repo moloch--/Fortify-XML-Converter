@@ -11,7 +11,6 @@ import os
 import sys
 import platform
 import argparse
-import traceback
 import xml.dom.minidom
 
 from datetime import datetime
@@ -265,7 +264,7 @@ class FortifyReport(object):
 def main(args):
     ''' Call functions based on user args '''
     start = datetime.now()
-    report = FortifyReport(args.input, args.debug)
+    report = FortifyReport(args.input)
     formats = {
         'xml': report.fix,
         'xlsx': report.to_xlsx,
@@ -290,11 +289,6 @@ if __name__ == '__main__':
     parser.add_argument('--version', '-v',
         action='version',
         version='%(prog)s v0.1'
-    )
-    parser.add_argument('--debug', '-d',
-        action='store_true',
-        help='enable debug stack traces',
-        dest='debug',
     )
     parser.add_argument('--input', '-i',
         help='input Fortify report .xml file',
