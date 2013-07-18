@@ -109,85 +109,27 @@ class FortifyReport(object):
             self._findings = {
                 'critical': [], 'high': [], 'medium': [], 'low': []
             }
-            for section in self.report_sections:
-                groupings = self.get_groupings(section)
-                for index, group in enumerate(groupings):
-                    stats = (index + 1, len(groupings), group.get('count'),)
-                    print_info("Parsing group %02d of %02d, with %s finding(s)" % stats)
-                    self._generate_findings(group)
-                stats = (len(groupings), len(self),)
-                print_info("Successfully parsed %d grouping(s), and %d finding(s)\n" % stats)
+            self._generate_findings()
         return self._findings
 
-    def get_groupings(self, section):
-        ''' Traverse DOM and return groups '''
-        try:
-            kids = self.get_children_by_tag(section, 'subsection')[0]
-            kids = self.get_children_by_tag(kids, 'issuelisting')[0]
-            kids = self.get_children_by_tag(kids, 'chart')[0]
-            groups = self.get_children_by_tag(kids, 'groupingsection')
-            print_info("Found %d grouping(s)" % len(groups))
-            return groups
-        except IndexError:
-            print(WARN + "Error: Failed to parse report body, missing required tag.")
-            if self.debug:
-                traceback.print_exc()
-            os._exit(1)
-
-    def _generate_findings(self, group):
+    def _generate_findings(self):
         ''' Creates a list of findings based on a grouping '''
-        issues = self.get_children_by_tag(group, 'issue')
+        issues = self.tree.findall(".//Issue")
         for index, issue in enumerate(issues):
             print_info("Parsing issue %d of %d ..." % (index + 1, len(issues)))
-            elems = self._issue_elements(issue)
-            if elems is not None:
-                severity = elems['folder'].text.strip().lower()
-                finding = Finding(
-                    category=elems['category'].text.strip(),
-                    severity=severity,
-                    file_name=elems['filename'].text.strip(),
-                    file_path=elems['filepath'].text.strip(),
-                    line_start=elems['linestart'].text.strip(),
-                    target_function=str(elems['targetfunction'].text).strip(),
-                )
-                if severity not in self._findings:
-                    self._findings[severity] = []
-                self._findings[severity].append(finding)
-
-    def _issue_elements(self, issue):
-        ''' Extract the elements we want from <Issue /> '''
-        elems = {}
-        try:
-            elems['category'] = self.get_children_by_tag(issue, 'category')[0]
-            elems['folder'] = self.get_children_by_tag(issue, 'folder')[0]
-            primary_elem = self.get_children_by_tag(issue, 'primary')[0]
-            elems['filename'] = self.get_children_by_tag(primary_elem, 'filename')[0]
-            elems['filepath'] = self.get_children_by_tag(primary_elem, 'filepath')[0]
-            elems['linestart'] = self.get_children_by_tag(primary_elem, 'linestart')[0]
-            elems['targetfunction'] = self.get_children_by_tag(primary_elem, 'targetfunction')[0]
-        except IndexError:
-            print(WARN + "Warning: Failed to parse issue, missing required tag.")
-            if self.debug:
-                traceback.print_exc()
-            return None
-        finally:
-            return elems
-
-    @property
-    def report_sections(self):
-        ''' Return only report sections that contain subsections '''
-        kids = self.get_children_by_tag(self.doc, 'reportsection')
-        _sections = filter(
-            lambda child: child.get('optionalSubsections').lower() == 'true', kids
-        )
-        print_info("Found %d report section(s)" % len(_sections))
-        return _sections
-
-    def get_children_by_tag(self, elem, tag_name):
-        ''' Return child elements with a given tag '''
-        return filter(
-            lambda child: child.tag.lower() == tag_name.lower(), elem.getchildren()
-        )
+            severity = issue.findtext("Folder").strip().lower()
+            primary = issue.find("Primary")
+            finding = Finding(
+                category=issue.findtext("Category"),
+                severity=severity,
+                file_name=primary.findtext("FileName"),
+                file_path=primary.findtext("FilePath"),
+                line_start=primary.findtext("LineStart").strip(),
+                target_function=primary.findtext("TargetFunction"),
+            )
+            if severity not in self._findings:
+                self._findings[severity] = []
+            self._findings[severity].append(finding)
 
     @property
     def ordered_findings(self):
@@ -346,7 +288,7 @@ def main(args):
             print(WARN + "Warning: Overwriting file " + BOLD + args.output)
         formats[args.format](args.output)
     delta = datetime.now() - start
-    if args.output is not None:
+    if args.output is not None or args.format == 'xlsx':
         print_info("Completed in %f second(s)\n" % delta.total_seconds())
 
 
