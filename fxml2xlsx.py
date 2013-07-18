@@ -261,7 +261,7 @@ class FortifyReport(object):
 def main(args):
     ''' Call functions based on user args '''
     start = datetime.now()
-    report = FortifyReport(args.target, args.debug)
+    report = FortifyReport(args.input, args.debug)
     formats = {
         'xml': report.fix,
         'xlsx': report.to_xlsx,
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--input', '-i',
         help='input Fortify report .xml file',
-        dest='target',
+        dest='input',
         required=True,
     )
     parser.add_argument('--output', '-o',
