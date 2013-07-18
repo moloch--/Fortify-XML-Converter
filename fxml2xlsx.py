@@ -54,20 +54,14 @@ class Finding(object):
     Holds data for a single Fortify finding, sortable by severity (rank)
     '''
 
-    def __init__(self, category, severity, file_name,
-                    file_path, line_start, target_function):
-        self.category = category      # <Category />
-        self.severity = severity      # <Folder />
-        self.file_name = file_name    # <FileName />
-        self.file_path = file_path    # <FilePath />
-        self.line_start = line_start  # <LineStart />
-        self.target_function = str(target_function)
-        self._ranks = {
-            'critical': 4,
-            'high': 3,
-            'medium': 2,
-            'low': 1,
-        }
+    def __init__(self, **kwargs):
+        self.category = kwargs.get('category', '').strip()      # <Category />
+        self.severity = kwargs.get('severity', '').strip()      # <Folder />
+        self.file_name = kwargs.get('file_name', '').strip()    # <FileName />
+        self.file_path = kwargs.get('file_path', '').strip()    # <FilePath />
+        self.line_start = kwargs.get('line_start', '').strip()  # <LineStart />
+        self.target_function = kwargs.get('target_function', '').strip()
+        self._ranks = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1}
 
     @property
     def rank(self):
@@ -96,12 +90,6 @@ class FortifyReport(object):
         self._ordered_findings = None
         self._severity_formats = None
 
-    def fix(self, output, remove):
-        ''' Fix DOM structure and output, "remove" not used '''
-        fout = sys.stdout if output is None else open(output, 'w')
-        xml_dom = xml.dom.minidom.parse(self.fname)
-        fout.write(xml_dom.toprettyxml())
-
     @property
     def findings(self):
         ''' Parse DOM and return list of Finding objects '''
@@ -124,7 +112,7 @@ class FortifyReport(object):
                 severity=severity,
                 file_name=primary.findtext("FileName"),
                 file_path=primary.findtext("FilePath"),
-                line_start=primary.findtext("LineStart").strip(),
+                line_start=primary.findtext("LineStart"),
                 target_function=primary.findtext("TargetFunction"),
             )
             if severity not in self._findings:
@@ -141,18 +129,21 @@ class FortifyReport(object):
             self._ordered_findings = sorted(master)
         return self._ordered_findings
 
+    def fix(self, output):
+        ''' Fix DOM structure and output '''
+        fout = sys.stdout if output is None else open(output, 'w')
+        xml_dom = xml.dom.minidom.parse(self.fname)
+        fout.write(xml_dom.toprettyxml())
+
     def to_csv(self, output):
         ''' Create a csv file based on findings '''
         fout = sys.stdout if output is None else open(output, 'w')
-        fout.write("risk,filename,line\n")
-        for issue in self.tree.findall(".//Issue"):
-            severity = issue.find("Folder").text.strip()
-            primary = issue.find("Primary")
-            if primary is not None:
-                fname = primary.findtext("FileName", '').strip()
-                line_start = primary.findtext("LineStart", '').strip()
-            csv_line = (severity, fname, line_start,)
-            fout.write("%s,%s,%s\n" % csv_line)
+        fout.write("risk,filename,line,filepath\n")
+        for vuln in self.ordered_findings:
+            csv_line = (vuln.severity, vuln.file_name, vuln.line_start, 
+                vuln.file_path, vuln.target_function,
+            )
+            fout.write("%s,%s,%s,%s,%s\n" % csv_line)
 
     def to_xlsx(self, output):
         ''' Create a Excel spreadsheet based on the findings '''
@@ -202,15 +193,15 @@ class FortifyReport(object):
         worksheet.set_column('B:B', fname_length)
         line_length = max(len(issue.line_start) for issue in self.findings[risk_level])
         worksheet.set_column('C:C', line_length + 10)  # Extra wiggle room for title
-        tfunction_length = max(len(issue.target_function) for issue in self.findings[risk_level])
-        worksheet.set_column('D:D', tfunction_length)
+        tf_length = max(len(issue.target_function) for issue in self.findings[risk_level])
+        worksheet.set_column('D:D', tf_length)
         fpath_length = max(len(issue.file_path) for issue in self.findings[risk_level])
         worksheet.set_column('E:E', fpath_length)
 
     def _write_xlsx_master(self, workbook):
         ''' Write an order list of all issues '''
         print_info("Writing master list to spreadsheet")
-        worksheet = workbook.add_worksheet("Master List")
+        worksheet = workbook.add_worksheet("Master")
         self._add_master_names(workbook, worksheet)
         self._resize_master(worksheet)
         for index, vuln in enumerate(self.ordered_findings):
@@ -245,8 +236,8 @@ class FortifyReport(object):
         worksheet.set_column('C:C', fname_length)
         line_length = max(len(issue.line_start) for issue in self.ordered_findings)
         worksheet.set_column('D:D', line_length + 10)  # Extra wiggle room for title
-        tfunction_length = max(len(issue.target_function) for issue in self.ordered_findings)
-        worksheet.set_column('E:E', tfunction_length)
+        tf_length = max(len(issue.target_function) for issue in self.ordered_findings)
+        worksheet.set_column('E:E', tf_length)
         fpath_length = max(len(issue.file_path) for issue in self.ordered_findings)
         worksheet.set_column('F:F', fpath_length)
 
@@ -254,16 +245,11 @@ class FortifyReport(object):
         ''' Create format based on severity level '''
         cell_format = workbook.add_format()
         cell_format.set_bold()
-        if severity == 'critical':
-            cell_format.set_font_color('white')
-            cell_format.set_bg_color('red')
-        elif severity == 'high':
-            cell_format.set_bg_color('orange')
-        elif severity == 'medium':
-            cell_format.set_bg_color('yellow')
-        else:
-            cell_format.set_font_color('white')
-            cell_format.set_bg_color('navy')
+        cell_format.set_font_color('white')
+        if severity == 'critical': cell_format.set_bg_color('red')
+        elif severity == 'high': cell_format.set_bg_color('orange')
+        elif severity == 'medium': cell_format.set_bg_color('yellow')
+        else: cell_format.set_bg_color('navy')
         return cell_format
 
     def __len__(self):
