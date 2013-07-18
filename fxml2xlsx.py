@@ -308,7 +308,7 @@ if __name__ == '__main__':
         default='xlsx',
     )
     args = parser.parse_args()
-    if os.path.exists(args.target) and os.path.isfile(args.target):
+    if os.path.exists(args.input) and os.path.isfile(args.input):
         main(args)
     else:
         print(WARN + 'Error: Target file does not exist.')
