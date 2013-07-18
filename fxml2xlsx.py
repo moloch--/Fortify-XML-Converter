@@ -292,8 +292,8 @@ if __name__ == '__main__':
         help='enable debug stack traces',
         dest='debug',
     )
-    parser.add_argument('--target', '-t',
-        help='target Fortify report .xml file',
+    parser.add_argument('--input', '-i',
+        help='input Fortify report .xml file',
         dest='target',
         required=True,
     )
