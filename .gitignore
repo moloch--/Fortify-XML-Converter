@@ -1,6 +1,7 @@
 *.py[cod]
 *.xml
 *.xls[x]
+*.csv
 
 # C extensions
 *.so

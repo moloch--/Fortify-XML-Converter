@@ -201,8 +201,16 @@ class FortifyReport(object):
 
     def to_csv(self, output):
         ''' Create a csv file based on findings '''
-        print(WARN + "Yeah... So I havn't gotten around to writing the code for this yet, sorry!")
-        os._exit(1)
+        fout = sys.stdout if output is None else open(output, 'w')
+        fout.write("risk,filename,line\n")
+        for issue in self.tree.findall(".//Issue"):
+            severity = issue.find("Folder").text.strip()
+            primary = issue.find("Primary")
+            if primary is not None:
+                fname = primary.findtext("FileName", '').strip()
+                line_start = primary.findtext("LineStart", '').strip()
+            csv_line = (severity, fname, line_start,)
+            fout.write("%s,%s,%s\n" % csv_line)
 
     def to_xlsx(self, output):
         ''' Create a Excel spreadsheet based on the findings '''
@@ -338,7 +346,8 @@ def main(args):
             print(WARN + "Warning: Overwriting file " + BOLD + args.output)
         formats[args.format](args.output)
     delta = datetime.now() - start
-    print_info("Completed in %f second(s)\n" % delta.total_seconds())
+    if args.output is not None:
+        print_info("Completed in %f second(s)\n" % delta.total_seconds())
 
 
 ### CLI Code
