@@ -59,7 +59,7 @@ class Finding(object):
         self.file_name = kwargs.get('file_name', '').strip()    # <FileName />
         self.file_path = kwargs.get('file_path', '').strip()    # <FilePath />
         self.line_start = kwargs.get('line_start', '').strip()  # <LineStart />
-        _target = kwargs.get('target_function', '').strip()
+        _target = kwargs.get('target_function', '')
         self.target_function = '' if _target is None else _target.strip()
         self._ranks = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1}
 
